@@ -29,50 +29,98 @@ class WXOpenData extends cc.Component {
 
         window['wx'].onMessage(data => {
             switch (data.message) {
-                case 'SetOpenId' :
-                {
-                    //openid登陆时主域获取，传到子域使用。
-                    //data: {message:'SetOpenId', openid:"xxxxxxxxxxxxx"}
-
-                    // GameData.instance.openId = data.openid;
-                    // GameData.instance.isDataDirty = true;
-                    // self.GetUserGameData();
-                    break;
-                }
                 case 'uploadGameData': {
                     self.uploadGameData(data.data.score);
                     break;
                 }
                 case 'ShowRank' : {
                     this.showRank();
-                    // this.scrollNode.active = true;
                     break;
                 }
                 case 'CloseRank' : {
                     this.scrollNode.active = false;
                 }
-                case 'FriendRank' : {
-                    //
-                    // self.GetFriendGameData();
-                    // self.showRank();
-                    break;
-                }
-                case 'BalanceRank' : {
-                    // self.GetBalanceData();
-                    // self.showBalance();
-                    break;
-                }
-                case 'exceed' : {
-                    // self.showExceed();
-                    break;
-                }
-                case 'CloseRank' : {
-                    //
-                    // self.closeRank();
+                case 'Exceed' : {
+                    this.showExceed();
                     break;
                 }
             }
         });
+    }
+
+    showExceed () {
+        console.log('==========showExceed===========');
+        this.node.active = false;
+        let self = this;
+        window['wx'].getUserInfo({
+            openIdList: ['selfOpenId'],
+            lang: 'zh_CN',
+            success: (res) => {
+                console.log('success', res.data)
+                self.gameData.name = res.data[0].nickName;
+                window['wx'].getFriendCloudStorage({
+                    keyList : ["score","nick"],
+                    success :   function(res){                
+                        let selfIndex = null;
+                        GameData.instance.friendData = res.data;
+                        self.sortFriendGameData();
+                        //找到玩家下一个
+                        for(var i = 0; i < GameData.instance.friendData.length; i++){
+                            var KVDataList = GameData.instance.friendData[i].KVDataList;
+                            let nick:string = '';
+                            for(var j = 0; j < KVDataList.length; j++){
+                                if(KVDataList[j].key == 'nick'){
+                                    nick = KVDataList[j].value;
+                                    break;
+                                }
+                            }
+        
+                            if(nick == GameData.instance.name){
+                                selfIndex = i;
+                                break;
+                            }
+                        }
+        
+                        console.log('selfIndex = ' + selfIndex);
+        
+                        if(selfIndex != null){
+                            let data = GameData.instance.friendData[selfIndex - 1];
+                            if(data == null){
+                                //如果自己分最高 就选自己作为目标
+                                data = GameData.instance.friendData[selfIndex];
+                            }
+                            if(data != null){
+                                var score = 0;
+                                for(var i = 0; i < data.KVDataList.length; i++){
+                                    if(data.KVDataList[i].key == 'score'){
+                                        score = data.KVDataList[i].value;
+                                        break;
+                                    }
+                                }
+                                var nick = data.nickname;
+                                var url = data.avatarUrl;
+                                //说明有下个玩家
+                                self.node.active = true;
+                                self.scrollNode.active = false;
+                                self.balanceNode.active = false;
+                                self.exceedNode.active = true;
+                                self.exceedNode.getChildByName('nick').getComponent(cc.Label).string = nick;
+                                self.exceedNode.getChildByName('score').getComponent(cc.Label).string = `${score}`;
+                                let image = window['wx'].createImage();
+                                image.onload = () => {
+                                    let texture = new cc.Texture2D();
+                                    texture.initWithElement(image);
+                                    texture.handleLoadedTexture();
+                                    var imgNode = self.exceedNode.getChildByName('avatarFrame');
+                                    imgNode.getComponent(cc.Sprite).spriteFrame = new cc.SpriteFrame(texture);
+                                };
+                                image.src = url;
+                            }
+                        }
+                    }
+                });
+            }
+        })
     }
 
     showRank(){
