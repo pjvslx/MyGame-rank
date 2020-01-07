@@ -80,7 +80,7 @@ class WXOpenData extends cc.Component {
             if(week != nowWeek){
                 for(let j = 0; j < KVDataList.length; j++){
                     if(KVDataList[j].key == 'score'){
-                        KVDataList[j].score = 0;
+                        KVDataList[j].value = 0;
                     }
                 }
             }
