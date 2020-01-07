@@ -20,8 +20,26 @@ class WXOpenData extends cc.Component {
     exceedNode: cc.Node = null;
     @property(cc.Node)
     balanceNode: cc.Node = null;
-
     gameData:GameData = null;
+
+    static getWeek(str) {
+        // 将字符串转为标准时间格式
+        str = Date.parse(str);
+        str = new Date(str);
+        // 先计算出该日期为第几周
+        let week = Math.ceil(str.getDate()/7);
+        let year = str.getFullYear();
+        let month = str.getMonth() + 1;
+        // 判断这个月前7天是周几，如果不是周一，则计入上个月
+        if  (str.getDate() < 7) {
+            if (str.getDay() !== 1) {
+                week = 5;
+                month = str.getMonth();
+            }
+        }
+        // console.log(`${year}-${month}-${week}`);
+        return `${year}-${month}-${week}`;
+    }
 
     onLoad(){
         let self = this;
@@ -48,6 +66,27 @@ class WXOpenData extends cc.Component {
         });
     }
 
+    resetScoreByWeek(data){
+        let nowWeek = WXOpenData.getWeek(new Date());
+        for(let i = 0; i < data.length; i++){
+            let KVDataList = data[i].KVDataList;
+            let week = '';
+            for(let j = 0; j < KVDataList.length; j++){
+                if(KVDataList[j].key == 'week'){
+                    week = KVDataList[j].value;
+                    break;
+                }
+            }
+            if(week != nowWeek){
+                for(let j = 0; j < KVDataList.length; j++){
+                    if(KVDataList[j].key == 'score'){
+                        KVDataList[j].score = 0;
+                    }
+                }
+            }
+        }
+    }
+
     showExceed () {
         console.log('==========showExceed===========');
         this.node.active = false;
@@ -59,10 +98,11 @@ class WXOpenData extends cc.Component {
                 console.log('success', res.data)
                 self.gameData.name = res.data[0].nickName;
                 window['wx'].getFriendCloudStorage({
-                    keyList : ["score","nick"],
+                    keyList : ['score','nick','week'],
                     success :   function(res){                
                         let selfIndex = null;
                         GameData.instance.friendData = res.data;
+                        self.resetScoreByWeek(GameData.instance.friendData);
                         self.sortFriendGameData();
                         //找到玩家下一个
                         for(var i = 0; i < GameData.instance.friendData.length; i++){
@@ -132,10 +172,11 @@ class WXOpenData extends cc.Component {
                 console.log('success', res.data)
                 self.gameData.name = res.data[0].nickName;
                 window['wx'].getFriendCloudStorage({
-                    keyList : ["score","nick"],
+                    keyList : ['score',"nick",'week'],
                     success :   function(res){
-                        console.log("下载好友游戏数据成功!");
+                        console.log("download friend cloud success!");
                         self.gameData.friendData = res.data;
+                        self.resetScoreByWeek(self.gameData.friendData)
                         console.log("res.data = " + JSON.stringify(res.data));
                         console.log("friendData.length = " + self.gameData.friendData.length);
                         self.sortFriendGameData();
@@ -186,15 +227,13 @@ class WXOpenData extends cc.Component {
             lang: 'zh_CN',
             success: (res) => {
                 console.log('success', res.data)
-                console.log('1111111111');
                 self.gameData.name = res.data[0].nickName;
                 self.gameData.maxScore = score;
-                console.log('2222222222');
-                console.log('3333333333');
                 window['wx'].setUserCloudStorage({
                     KVDataList  :   [
                         { "key":'score', "value": "" + score },
-                        { "key":"nick", "value":self.gameData.name}
+                        { "key":"nick", "value":self.gameData.name},
+                        { "key":"week", "value":WXOpenData.getWeek(new Date())}
                     ],
                     success :   function(){
                         console.log("UploadGameData 上传成功!");
