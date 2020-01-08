@@ -20,6 +20,10 @@ class WXOpenData extends cc.Component {
     exceedNode: cc.Node = null;
     @property(cc.Node)
     balanceNode: cc.Node = null;
+    @property(cc.Node)
+    balanceFrameList: cc.Node[] = [];
+    @property(cc.SpriteFrame)
+    indexSpriteFrameList: cc.SpriteFrame[] = [];
     gameData:GameData = null;
 
     static getWeek(str) {
@@ -62,6 +66,10 @@ class WXOpenData extends cc.Component {
                     this.showExceed();
                     break;
                 }
+                case 'Balance' : {
+                    self.getBalanceData();
+                    break;
+                }
             }
         });
     }
@@ -85,6 +93,133 @@ class WXOpenData extends cc.Component {
                 }
             }
         }
+    }
+
+    getBalanceData (){
+        var self = this;
+        this.node.active = false;
+        window['wx'].getUserInfo({
+            openIdList: ['selfOpenId'],
+            lang: 'zh_CN',
+            success: (res) => {
+                self.gameData.name = res.data[0].nickName;
+                window['wx'].getFriendCloudStorage({
+                    keyList : ["score","nick","week"],
+                    success :   function(res){
+                        console.log("下载好友游戏数据成功!");
+                        GameData.instance.friendData = res.data;
+                        console.log("friendData.length = " + GameData.instance.friendData.length);
+                        self.sortFriendGameData();
+                        let selfIndex = 0;
+                        //找到自身数据的前一个以及后一个
+                        for(var i = 0; i < GameData.instance.friendData.length; i++){
+                            let KVDataList = GameData.instance.friendData[i].KVDataList;
+                            let nick:string = '';
+                            for(var j = 0; j < KVDataList.length; j++){
+                                if(KVDataList[j].key == 'nick'){
+                                    nick = KVDataList[j].value;
+                                    break;
+                                }
+                            }
+        
+                            if(nick == GameData.instance.name){
+                                selfIndex = i;
+                                break;
+                            }
+                        }
+        
+                        var rankList = [];
+                        var dataList = [];
+                        if(selfIndex - 1 >= 0){
+                            dataList.push(GameData.instance.friendData[selfIndex - 1]);
+                            rankList.push(selfIndex);
+                        }
+                        dataList.push(GameData.instance.friendData[selfIndex]);
+                        rankList.push(selfIndex + 1);
+                        if(selfIndex + 1 < GameData.instance.friendData.length){
+                            dataList.push(GameData.instance.friendData[selfIndex + 1]);
+                            rankList.push(selfIndex + 2);
+                        }
+        
+                        if(dataList.length <= 2){
+                            //如果只有两个说明自己左边的肯定没人 要补右边的
+                            if(selfIndex + 2 < GameData.instance.friendData.length){
+                                dataList.push(GameData.instance.friendData[selfIndex + 2]);
+                                rankList.push(selfIndex + 3);
+                            }
+                        }
+                        self.node.active = true;
+                        self.scrollNode.active = false;
+                        self.balanceNode.active = true;
+                        self.exceedNode.active = false;
+                        self.updateBalance(dataList,rankList,selfIndex + 1);
+                    }
+                });
+            }
+        });
+    }
+
+    updateBalance (dataList,rankList,selfRank){
+        var index = 0;
+        for(var i = 0; i < dataList.length; i++){
+            index = i;
+            var frameNode = this.balanceFrameList[i];
+            frameNode.active = true;
+            var imgIndex = frameNode.getChildByName('imgIndex');
+            var labelIndex = frameNode.getChildByName('labelIndex');
+            var nickNode = frameNode.getChildByName('nick');
+            var levelNode = frameNode.getChildByName('score');
+            var rank = rankList[i];
+            if(rank <= 3){
+                imgIndex.active = true;
+                labelIndex.active = false;
+                imgIndex.getComponent(cc.Sprite).spriteFrame = this.indexSpriteFrameList[rank - 1];
+            }else{
+                imgIndex.active = false;
+                labelIndex.active = true;
+                labelIndex.getComponent(cc.Label).string = `${rank}`;
+            }
+
+            if(rank == selfRank){
+                //如果是自己
+                labelIndex.color = cc.color(82,172,37);
+                levelNode.color = cc.color(82,172,37);
+                nickNode.color = cc.color(82,172,37);
+            }else{
+                labelIndex.color = cc.color(209,117,41);
+                levelNode.color = cc.color(209,117,41);
+                nickNode.color = cc.color(209,117,41);
+            }
+
+            nickNode.getComponent(cc.Label).string = dataList[i].nickname;
+            var img = frameNode.getChildByName('frame').getChildByName('avatar');
+            this.setImageUrl(img,dataList[i].avatarUrl);
+
+            var KVDataList = dataList[i].KVDataList;
+            var score = '0';
+            for(var j = 0; j < KVDataList.length; j++){
+                if(KVDataList[j].key == 'score'){
+                    score = KVDataList[j].value;
+                    break;
+                }
+            }
+            levelNode.getComponent(cc.Label).string = `${score}`;
+        }
+
+        for(var i = index + 1; i < this.balanceFrameList.length; i++){
+            this.balanceFrameList[i].active = false;
+        }
+    }
+
+    setImageUrl (imgNode, url){
+        let image = window['wx'].createImage();
+        image.onload = () => {
+            let texture = new cc.Texture2D();
+            texture.initWithElement(image);
+            texture.handleLoadedTexture();
+            imgNode.getComponent(cc.Sprite).spriteFrame = new cc.SpriteFrame(texture);
+        };
+        image.src = url;
     }
 
     showExceed () {
