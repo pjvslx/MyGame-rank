@@ -26,6 +26,8 @@ class WXOpenData extends cc.Component {
     indexSpriteFrameList: cc.SpriteFrame[] = [];
     gameData:GameData = null;
 
+    static scoreKey: string = 'score1';
+
     static getWeek(str) {
         // 将字符串转为标准时间格式
         str = Date.parse(str);
@@ -87,7 +89,7 @@ class WXOpenData extends cc.Component {
             }
             if(week != nowWeek){
                 for(let j = 0; j < KVDataList.length; j++){
-                    if(KVDataList[j].key == 'score'){
+                    if(KVDataList[j].key == WXOpenData.scoreKey){
                         KVDataList[j].value = 0;
                     }
                 }
@@ -104,7 +106,7 @@ class WXOpenData extends cc.Component {
             success: (res) => {
                 self.gameData.name = res.data[0].nickName;
                 window['wx'].getFriendCloudStorage({
-                    keyList : ["score","nick","week"],
+                    keyList : [WXOpenData.scoreKey,"nick","week"],
                     success :   function(res){
                         console.log("下载好友游戏数据成功!");
                         GameData.instance.friendData = res.data;
@@ -198,7 +200,7 @@ class WXOpenData extends cc.Component {
             var KVDataList = dataList[i].KVDataList;
             var score = '0';
             for(var j = 0; j < KVDataList.length; j++){
-                if(KVDataList[j].key == 'score'){
+                if(KVDataList[j].key == WXOpenData.scoreKey){
                     score = KVDataList[j].value;
                     break;
                 }
@@ -233,7 +235,7 @@ class WXOpenData extends cc.Component {
                 console.log('success', res.data)
                 self.gameData.name = res.data[0].nickName;
                 window['wx'].getFriendCloudStorage({
-                    keyList : ['score','nick','week'],
+                    keyList : [WXOpenData.scoreKey,'nick','week'],
                     success :   function(res){                
                         let selfIndex = null;
                         GameData.instance.friendData = res.data;
@@ -267,7 +269,7 @@ class WXOpenData extends cc.Component {
                             if(data != null){
                                 var score = 0;
                                 for(var i = 0; i < data.KVDataList.length; i++){
-                                    if(data.KVDataList[i].key == 'score'){
+                                    if(data.KVDataList[i].key == WXOpenData.scoreKey){
                                         score = data.KVDataList[i].value;
                                         break;
                                     }
@@ -307,7 +309,7 @@ class WXOpenData extends cc.Component {
                 console.log('success', res.data)
                 self.gameData.name = res.data[0].nickName;
                 window['wx'].getFriendCloudStorage({
-                    keyList : ['score',"nick",'week'],
+                    keyList : [WXOpenData.scoreKey,"nick",'week'],
                     success :   function(res){
                         console.log("download friend cloud success!");
                         self.gameData.friendData = res.data;
@@ -330,14 +332,14 @@ class WXOpenData extends cc.Component {
         var compareScore = function (x, y) {//比较得分
             var value1 = 0;
             for(var i = 0; i < x.KVDataList.length; i++){
-                if(x.KVDataList[i].key == 'score'){
+                if(x.KVDataList[i].key == WXOpenData.scoreKey){
                     value1 = parseInt(x.KVDataList[i].value);
                     break;
                 }
             }
             var value2 = 0;
             for(var i = 0; i < y.KVDataList.length; i++){
-                if(y.KVDataList[i].key == 'score'){
+                if(y.KVDataList[i].key == WXOpenData.scoreKey){
                     value2 = parseInt(y.KVDataList[i].value);
                     break
                 }
@@ -366,7 +368,7 @@ class WXOpenData extends cc.Component {
                 self.gameData.maxScore = score;
                 window['wx'].setUserCloudStorage({
                     KVDataList  :   [
-                        { "key":'score', "value": "" + score },
+                        { "key":WXOpenData.scoreKey, "value": "" + score },
                         { "key":"nick", "value":self.gameData.name},
                         { "key":"week", "value":WXOpenData.getWeek(new Date())}
                     ],

@@ -28,23 +28,24 @@ class List extends cc.Component {
         cellNode.active = true;
         let cell:Cell = cellNode.getComponent("Cell");
         cell.init(index + 1, imgURL, name, score);
-        cellNode.y = -45 - index * 90;
+        cellNode.y = -20 -0.5 * 100 - index * 100;
         cellNode.parent = this.node;
     }
 
     updateRankList(){
+        let WXOpenData = require('./WXOpenData');
         let self = this;
         let length = 10;
         if(GameData.instance.friendData.length < length){
             length = GameData.instance.friendData.length;
         }
-        this.node.setContentSize(cc.size(450, length*90));
+        this.node.setContentSize(cc.size(450, length*100 + 20));
         
         for (let index = 0; index < length; index++) {
             const data = GameData.instance.friendData[index];
             let score = 0;
             for(let i = 0; i < data.KVDataList.length; i++){
-                if(data.KVDataList[i].key == 'score'){
+                if(data.KVDataList[i].key == WXOpenData.scoreKey){
                     score = data.KVDataList[i].value;
                 }
             }
