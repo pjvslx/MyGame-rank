@@ -112,6 +112,7 @@ class WXOpenData extends cc.Component {
                         GameData.instance.friendData = res.data;
                         console.log("friendData.length = " + GameData.instance.friendData.length);
                         console.log('before GameData.instance.friendData = ' + JSON.stringify(GameData.instance.friendData));
+                        self.resetScoreByWeek(GameData.instance.friendData);
                         self.sortFriendGameData();
                         console.log('after GameData.instance.friendData = ' + JSON.stringify(GameData.instance.friendData));
                         let selfIndex = 0;
