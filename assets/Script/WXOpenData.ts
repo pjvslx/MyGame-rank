@@ -111,7 +111,9 @@ class WXOpenData extends cc.Component {
                         console.log("下载好友游戏数据成功!");
                         GameData.instance.friendData = res.data;
                         console.log("friendData.length = " + GameData.instance.friendData.length);
+                        console.log('before GameData.instance.friendData = ' + JSON.stringify(GameData.instance.friendData));
                         self.sortFriendGameData();
+                        console.log('after GameData.instance.friendData = ' + JSON.stringify(GameData.instance.friendData));
                         let selfIndex = 0;
                         //找到自身数据的前一个以及后一个
                         for(var i = 0; i < GameData.instance.friendData.length; i++){
@@ -150,6 +152,13 @@ class WXOpenData extends cc.Component {
                                 rankList.push(selfIndex + 3);
                             }
                         }
+
+                        if(dataList.length <= 2){
+                            if(selfIndex - 2 >= 0){
+                                dataList.unshift(GameData.instance.friendData[selfIndex - 2]);
+                                rankList.unshift(selfIndex - 1);
+                            }
+                        }
                         self.node.active = true;
                         self.scrollNode.active = false;
                         self.balanceNode.active = true;
@@ -162,6 +171,7 @@ class WXOpenData extends cc.Component {
     }
 
     updateBalance (dataList,rankList,selfRank){
+        console.log('dataList = ' + JSON.stringify(dataList) + ' rankList = ' + JSON.stringify(rankList) + ' selfRank = ' + JSON.stringify(selfRank));
         var index = 0;
         for(var i = 0; i < dataList.length; i++){
             index = i;

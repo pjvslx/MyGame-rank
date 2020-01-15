@@ -36,6 +36,7 @@ class Cell extends cc.Component {
         }else{
             this.imgIndex.active = false;
             this.labelIndex.active = true;
+            this.labelIndex.getComponent(cc.Label).string = `${index}`;
         }
 
         let image = window['wx'].createImage();
