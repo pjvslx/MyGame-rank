@@ -35,7 +35,7 @@ class List extends cc.Component {
     updateRankList(){
         let WXOpenData = require('./WXOpenData');
         let self = this;
-        let length = 10;
+        let length = 20;
         if(GameData.instance.friendData.length < length){
             length = GameData.instance.friendData.length;
         }
